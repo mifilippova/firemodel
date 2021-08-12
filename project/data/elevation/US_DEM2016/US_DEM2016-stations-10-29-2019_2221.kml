@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml>
+  <Document>
+    <description>Weather Stations:C:/Users/admin/Documents/project/data/elevation/US_DEM2016/US_DEM2016-stations-10-29-2019_2221.kml</description>
+    <Placemark>
+      <name>KVNY</name
+>    <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>
+          -118.491000,34.212500,0.0
+        </coordinates>
+      </Point>
+      <description>
+        <![CDATA[
+          Name: KVNY
+          Height: 10.00 m
+          Speed: 0.00 mps
+          Direction: 0 degrees
+          Cloud Cover: 0.00 percent
+          Temperature: 14.0 C
+          Local Time:  2019-Oct-29 22:21:57.500000 PDT
+          Radius of Influence: infinite
+        ]]>
+      </description>
+    </Placemark>
+  </Document>
+</kml>

@@ -1,0 +1,146 @@
+<PAMDataset>
+  <Metadata>
+    <MDI key="DESCRIPTION"></MDI>
+    <MDI key="LATITUDE">34</MDI>
+    <MDI key="LINEAR_UNIT">Meters</MDI>
+  </Metadata>
+  <PAMRasterBand band="1">
+    <Description>Elevation</Description>
+    <Histograms>
+      <HistItem>
+        <HistMin>132.5013089005236</HistMin>
+        <HistMax>514.4986910994764</HistMax>
+        <BucketCount>382</BucketCount>
+        <IncludeOutOfRange>0</IncludeOutOfRange>
+        <Approximate>0</Approximate>
+        <HistCounts>1|0|0|0|0|0|1|0|0|5|12|8|18|14|26|30|36|41|51|49|80|67|47|60|57|58|66|61|68|58|62|59|66|54|74|83|58|66|85|88|111|106|92|91|94|61|73|91|103|93|88|73|79|62|87|78|84|75|80|95|112|76|74|71|95|89|87|104|78|76|79|78|86|76|88|71|96|89|67|91|72|78|66|82|83|88|70|91|69|77|68|73|67|78|76|67|94|79|60|62|57|68|77|69|82|74|63|69|63|68|73|56|60|72|54|71|59|66|63|81|83|60|58|65|59|65|69|78|82|63|65|56|67|64|84|63|59|75|69|86|73|74|64|62|71|77|75|72|65|68|73|67|79|52|68|67|76|81|67|63|63|81|52|72|76|77|78|63|58|70|67|81|59|72|84|67|76|61|105|82|78|89|61|55|68|84|71|70|81|76|66|81|87|81|73|78|69|81|87|75|76|78|72|72|80|69|78|72|65|71|87|67|76|67|73|71|65|73|82|57|71|63|64|63|73|64|72|74|48|62|68|66|66|63|71|68|47|65|77|68|65|63|55|61|54|56|73|62|52|51|69|65|54|63|49|54|41|54|62|59|53|63|41|45|51|49|54|39|51|58|56|54|47|48|43|41|41|50|38|48|56|39|42|50|37|33|30|41|39|44|36|41|38|42|40|30|32|41|35|35|26|35|38|35|34|33|38|29|19|30|30|19|41|27|36|31|27|18|31|23|28|28|26|18|19|24|20|33|20|25|22|23|24|20|20|17|16|20|23|19|22|24|11|14|12|8|19|4|13|15|12|8|14|10|12|7|12|5|7|8|6|9|4|3|2|3|3|1|3|4|4|1|1|1|1|1|1|2|1|1|0|1</HistCounts>
+      </HistItem>
+    </Histograms>
+    <Metadata>
+      <MDI key="ELEVATION_FILE">D:\scratch\dist\lf10589910\us_200lcp40_19\output\rastert_elevation_1.txt</MDI>
+      <MDI key="ELEVATION_MAX">514</MDI>
+      <MDI key="ELEVATION_MIN">133</MDI>
+      <MDI key="ELEVATION_NUM_CLASSES">-1</MDI>
+      <MDI key="ELEVATION_UNIT">0</MDI>
+      <MDI key="ELEVATION_UNIT_NAME">Meters</MDI>
+      <MDI key="STATISTICS_MAXIMUM">514</MDI>
+      <MDI key="STATISTICS_MEAN">291.34303342402</MDI>
+      <MDI key="STATISTICS_MINIMUM">133</MDI>
+      <MDI key="STATISTICS_STDDEV">87.642863450741</MDI>
+      <MDI key="STATISTICS_VALID_PERCENT">100</MDI>
+    </Metadata>
+  </PAMRasterBand>
+  <PAMRasterBand band="2">
+    <Description>Slope</Description>
+    <Histograms>
+      <HistItem>
+        <HistMin>-0.4893617021276596</HistMin>
+        <HistMax>46.48936170212766</HistMax>
+        <BucketCount>47</BucketCount>
+        <IncludeOutOfRange>0</IncludeOutOfRange>
+        <Approximate>0</Approximate>
+        <HistCounts>24|157|389|406|401|438|468|435|490|502|485|514|517|539|513|566|601|543|624|650|630|651|775|721|721|763|789|721|772|706|717|619|562|509|394|332|295|215|157|104|70|44|25|14|10|5|1</HistCounts>
+      </HistItem>
+    </Histograms>
+    <Metadata>
+      <MDI key="SLOPE_FILE">D:\scratch\dist\lf10589910\us_200lcp40_19\output\rastert_slope_1.txt</MDI>
+      <MDI key="SLOPE_MAX">46</MDI>
+      <MDI key="SLOPE_MIN">0</MDI>
+      <MDI key="SLOPE_NUM_CLASSES">47</MDI>
+      <MDI key="SLOPE_UNIT">0</MDI>
+      <MDI key="SLOPE_UNIT_NAME">Degrees</MDI>
+      <MDI key="STATISTICS_MAXIMUM">46</MDI>
+      <MDI key="STATISTICS_MEAN">20.232607850758</MDI>
+      <MDI key="STATISTICS_MINIMUM">0</MDI>
+      <MDI key="STATISTICS_STDDEV">9.8210085618885</MDI>
+      <MDI key="STATISTICS_VALID_PERCENT">100</MDI>
+    </Metadata>
+  </PAMRasterBand>
+  <PAMRasterBand band="3">
+    <Description>Aspect</Description>
+    <Histograms>
+      <HistItem>
+        <HistMin>-0.4986111111111111</HistMin>
+        <HistMax>359.4986111111111</HistMax>
+        <BucketCount>360</BucketCount>
+        <IncludeOutOfRange>0</IncludeOutOfRange>
+        <Approximate>0</Approximate>
+        <HistCounts>30|19|11|18|13|17|21|19|11|21|20|19|25|11|14|10|20|23|32|13|14|17|22|23|21|12|19|31|26|22|20|24|20|28|29|26|33|31|30|29|26|29|30|36|25|40|27|32|33|29|25|34|31|23|52|46|49|29|43|43|47|52|36|53|36|60|47|68|70|58|60|45|75|69|57|69|58|57|69|64|68|77|74|82|92|90|96|82|86|88|118|83|88|82|88|105|112|93|109|115|102|97|106|112|95|107|119|99|144|61|82|84|88|85|84|95|58|102|95|101|87|93|93|75|76|64|61|61|85|71|65|68|60|68|64|169|36|65|72|68|75|67|62|70|70|61|68|43|56|75|41|55|53|76|32|57|67|68|46|60|51|29|97|52|43|71|62|47|52|91|56|57|59|53|75|58|60|49|42|42|101|47|49|51|59|48|58|58|63|44|51|67|48|42|48|54|50|53|83|38|50|44|41|57|36|60|35|79|59|50|47|55|63|58|56|59|62|54|56|55|58|54|50|74|58|124|63|57|63|86|80|72|68|90|88|85|96|77|78|100|85|94|96|121|77|95|98|92|82|98|77|75|121|85|67|96|79|110|88|77|100|102|100|108|95|85|102|69|104|77|108|77|102|64|80|86|81|68|72|76|63|60|58|79|68|63|64|62|88|53|61|79|52|65|70|51|50|49|70|47|57|46|47|48|49|35|52|60|49|36|45|48|33|40|37|52|43|51|34|36|34|39|30|35|32|39|38|27|26|30|24|31|25|19|15|15|30|16|18|13|21|21|29|13|12|10|24|21|14|16|15|16|16|14|15|17|18|22|14|23</HistCounts>
+      </HistItem>
+    </Histograms>
+    <Metadata>
+      <MDI key="ASPECT_FILE">D:\scratch\dist\lf10589910\us_200lcp40_19\output\rastert_aspect_1.txt</MDI>
+      <MDI key="ASPECT_MAX">359</MDI>
+      <MDI key="ASPECT_MIN">0</MDI>
+      <MDI key="ASPECT_NUM_CLASSES">-1</MDI>
+      <MDI key="ASPECT_UNIT">2</MDI>
+      <MDI key="ASPECT_UNIT_NAME">Azimuth degrees</MDI>
+      <MDI key="STATISTICS_MAXIMUM">359</MDI>
+      <MDI key="STATISTICS_MEAN">180.85357559269</MDI>
+      <MDI key="STATISTICS_MINIMUM">0</MDI>
+      <MDI key="STATISTICS_STDDEV">87.07382770323</MDI>
+      <MDI key="STATISTICS_VALID_PERCENT">100</MDI>
+    </Metadata>
+  </PAMRasterBand>
+  <PAMRasterBand band="4">
+    <Description>Fuel models</Description>
+    <Metadata>
+      <MDI key="FUEL_MODEL_FILE">D:\scratch\dist\lf10589910\us_200lcp40_19\output\rastert_fuel1.txt</MDI>
+      <MDI key="FUEL_MODEL_MAX">189</MDI>
+      <MDI key="FUEL_MODEL_MIN">91</MDI>
+      <MDI key="FUEL_MODEL_NUM_CLASSES">18</MDI>
+      <MDI key="FUEL_MODEL_OPTION">0</MDI>
+      <MDI key="FUEL_MODEL_OPTION_DESC">no custom models AND no conversion file needed</MDI>
+      <MDI key="FUEL_MODEL_VALUES">91,99,101,102,121,122,142,147,163,165,182,183,184,185,186,187,188,189</MDI>
+      <MDI key="STATISTICS_MAXIMUM">189</MDI>
+      <MDI key="STATISTICS_MEAN">123.50393509522</MDI>
+      <MDI key="STATISTICS_MINIMUM">91</MDI>
+      <MDI key="STATISTICS_STDDEV">31.85210863945</MDI>
+      <MDI key="STATISTICS_VALID_PERCENT">100</MDI>
+    </Metadata>
+  </PAMRasterBand>
+  <PAMRasterBand band="5">
+    <Description>Canopy cover</Description>
+    <Metadata>
+      <MDI key="CANOPY_COV_FILE">D:\scratch\dist\lf10589910\us_200lcp40_19\output\rastert_canopy1.txt</MDI>
+      <MDI key="CANOPY_COV_MAX">65</MDI>
+      <MDI key="CANOPY_COV_MIN">0</MDI>
+      <MDI key="CANOPY_COV_NUM_CLASSES">7</MDI>
+      <MDI key="CANOPY_COV_UNIT">1</MDI>
+      <MDI key="CANOPY_COV_UNIT_NAME">Percent</MDI>
+    </Metadata>
+  </PAMRasterBand>
+  <PAMRasterBand band="6">
+    <Description>Canopy height</Description>
+    <Metadata>
+      <MDI key="CANOPY_HT_FILE">D:\scratch\dist\lf10589910\us_200lcp40_19\output\rastert_height_1.txt</MDI>
+      <MDI key="CANOPY_HT_MAX">430</MDI>
+      <MDI key="CANOPY_HT_MIN">0</MDI>
+      <MDI key="CANOPY_HT_NUM_CLASSES">12</MDI>
+      <MDI key="CANOPY_HT_UNIT">3</MDI>
+      <MDI key="CANOPY_HT_UNIT_NAME">Meters x 10</MDI>
+    </Metadata>
+  </PAMRasterBand>
+  <PAMRasterBand band="7">
+    <Description>Canopy base height</Description>
+    <Metadata>
+      <MDI key="CBH_FILE">D:\scratch\dist\lf10589910\us_200lcp40_19\output\rastert_base_1.txt</MDI>
+      <MDI key="CBH_MAX">100</MDI>
+      <MDI key="CBH_MIN">0</MDI>
+      <MDI key="CBH_NUM_CLASSES">29</MDI>
+      <MDI key="CBH_UNIT">3</MDI>
+      <MDI key="CBH_UNIT_NAME">Meters x 10</MDI>
+    </Metadata>
+  </PAMRasterBand>
+  <PAMRasterBand band="8">
+    <Description>Canopy bulk density</Description>
+    <Metadata>
+      <MDI key="CBD_FILE">D:\scratch\dist\lf10589910\us_200lcp40_19\output\rastert_density_1.txt</MDI>
+      <MDI key="CBD_MAX">17</MDI>
+      <MDI key="CBD_MIN">0</MDI>
+      <MDI key="CBD_NUM_CLASSES">12</MDI>
+      <MDI key="CBD_UNIT">3</MDI>
+      <MDI key="CBD_UNIT_NAME">kg/m^3 x 100</MDI>
+    </Metadata>
+  </PAMRasterBand>
+</PAMDataset>
