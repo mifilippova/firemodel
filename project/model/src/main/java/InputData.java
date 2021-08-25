@@ -35,10 +35,15 @@ public class InputData {
     String fuelCodes;
     String elevation;
 
+    public String getBuildingsPath() {
+        return buildingsPath;
+    }
+
+    String buildingsPath;
     int weatherPeriod;
 
     public InputData(double[] coords, String fuel, String fuelCodes, String elevation, String meteodata, int meteoDataChange,
-                     LocalDateTime start, LocalDateTime finish, int side, String ignition) {
+                     LocalDateTime start, LocalDateTime finish, int side, String ignition, String buildingsPath) {
         this.meteodata = meteodata;
         this.start     = start;
         this.finish    = finish;
@@ -46,6 +51,7 @@ public class InputData {
         this.fuelCodes = fuelCodes;
         this.elevation = elevation;
         this.weatherPeriod = meteoDataChange;
+        this.buildingsPath = buildingsPath;
 
         startPoint = new Geometry(ogrConstants.wkbPoint);
         endPoint = new Geometry(ogrConstants.wkbPoint);

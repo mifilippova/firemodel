@@ -13,29 +13,54 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>10</source>
-                    <target>10</target>
+                    <source>15</source>
+                    <target>15</target>
                 </configuration>
             </plugin>
         </plugins>
     </build>
-<dependencies>
-    <!-- https://mvnrepository.com/artifact/com.opencsv/opencsv -->
-    <dependency>
-        <groupId>com.opencsv</groupId>
-        <artifactId>opencsv</artifactId>
-        <version>5.5.1</version>
-    </dependency>
 
-    <!-- https://mvnrepository.com/artifact/org.gdal/gdal -->
-    <dependency>
-        <groupId>org.gdal</groupId>
-        <artifactId>gdal</artifactId>
-        <version>3.0.0</version>
-        <type>pom</type>
-    </dependency>
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.8.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.gdal</groupId>
+            <artifactId>gdal</artifactId>
+            <version>3.3.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.opencsv</groupId>
+            <artifactId>opencsv</artifactId>
+            <version>5.5.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openstreetmap.osmosis</groupId>
+            <artifactId>osmosis-pbf</artifactId>
+            <version>0.46</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.openstreetmap.osmosis/osmosis-core -->
+        <dependency>
+            <groupId>org.openstreetmap.osmosis</groupId>
+            <artifactId>osmosis-core</artifactId>
+            <version>0.48.3</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.openstreetmap.osmosis/osmosis-xml -->
+        <dependency>
+            <groupId>org.openstreetmap.osmosis</groupId>
+            <artifactId>osmosis-xml</artifactId>
+            <version>0.48.3</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.openstreetmap.osmosis/osmosis-tagfilter -->
+        <dependency>
+            <groupId>org.openstreetmap.osmosis</groupId>
+            <artifactId>osmosis-tagfilter</artifactId>
+            <version>0.48.3</version>
+        </dependency>
 
-</dependencies>
 
-
+    </dependencies>
 </project>
