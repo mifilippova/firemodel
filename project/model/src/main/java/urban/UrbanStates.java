@@ -1,3 +1,5 @@
+package urban;
+
 public enum UrbanStates {
     UNBURNED(0),
     IGNITED(1),

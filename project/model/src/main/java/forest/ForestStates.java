@@ -1,3 +1,5 @@
+package forest;
+
 public enum ForestStates {
     UNBURNED(0),
     IGNITED(1),

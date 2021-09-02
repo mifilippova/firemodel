@@ -1,3 +1,5 @@
+package forest;
+
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import com.opencsv.exceptions.CsvValidationException;
@@ -5,25 +7,23 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.gdal.gdal.*;
 import org.gdal.gdalconst.gdalconst;
 import org.gdal.ogr.DataSource;
+import org.gdal.ogr.Geometry;
 import org.gdal.ogr.ogr;
 import org.gdal.ogr.ogrConstants;
 import org.gdal.osr.CoordinateTransformation;
 import org.gdal.osr.SpatialReference;
-import org.springframework.cglib.core.Local;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Vector;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import input.InputData;
+import urban.UrbanCell;
 
 public class ForestArea {
     int side;
@@ -50,7 +50,7 @@ public class ForestArea {
     private SpatialReference spatialReferenceUTM;
 
     public ForestArea(InputData inputData, SpatialReference spatialReferenceUTM, int length, int width) {
-        this.side      = inputData.side;
+        this.side      = inputData.getSide();
         this.inputData = inputData;
         currentDate    = inputData.getStart();
         ForestCell.setSide(side);
@@ -65,10 +65,7 @@ public class ForestArea {
         setElevation(inputData.getElevation());
         setSlopes();
         setFuel(inputData.getFuel(), inputData.getFuelCodes());
-        setWeather(inputData.getMeteodata(), 0);
         setIgnition(inputData.getIgnition());
-
-        setSpreadRates();
 
     }
 
@@ -83,9 +80,20 @@ public class ForestArea {
 
     private void defineArea(InputData inputData) {
         cells = new ForestCell[width][length];
+
+        var sourceSRS = new SpatialReference();
+        sourceSRS.ImportFromEPSG(4326);
+        var transform = new CoordinateTransformation(sourceSRS, spatialReferenceUTM);
+
+        double[] start = transform.TransformPoint(inputData.getStartPoint().GetX(),
+                inputData.getStartPoint().GetY());
+
+        double x, y;
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < length; j++) {
-                cells[i][j] = new ForestCell();
+                x = start[1] + i * side;
+                y = start[0] + j * side;
+                cells[i][j] = new ForestCell(x, y);
             }
         }
 
@@ -140,14 +148,10 @@ public class ForestArea {
     public void propagate(double minutesLeft, double step, LocalDateTime localDateTime) {
         double newState = 0;
         currentDate = localDateTime;
-        
             // поменять погоду
             if (minutesLeft == 0) {
-                setWeather(inputData.getMeteodata(),
-                        (int) Duration.between(inputData.getStart(), localDateTime).toHours());
                 setSpreadRates();
                 printStatistics();
-
             }
 
             for (int i = 2; i < width - 2; i++) {
@@ -206,8 +210,6 @@ public class ForestArea {
                     }
                 }
             }
-
-            updateStates();
         }
 
 
@@ -240,7 +242,7 @@ public class ForestArea {
             }
         }
 
-        System.out.println(currentDate.toString());
+        System.out.println("========" + currentDate.toString() + "========");
         System.out.println("IGNITED = " + ignited);
         System.out.println("BURNED = " + burned);
         System.out.println("DEVELOPING = " + developing);
@@ -248,9 +250,15 @@ public class ForestArea {
         System.out.println("EXTINGUISHING = " + ext);
     }
 
-    private void updateStates() {
+    public void updateStates() {
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < length; j++) {
+                if (cells[i][j].isIgnitedByUrban())
+                {
+                    cells[i][j].setState(ForestStates.IGNITED);
+                    cells[i][j].makeIgnitedByUrbanDefault();
+                    states[i][j] = ForestStates.IGNITED;
+                }
                 cells[i][j].setState(states[i][j]);
             }
         }
@@ -411,30 +419,6 @@ public class ForestArea {
 
     }
 
-    private void setWeather(String weather, int number) {
-        FileReader file = null;
-        try {
-            file = new FileReader(weather);
-
-            var csvReader = new CSVReader(file);
-            String[] record;
-            csvReader.skip(number);
-
-            int ind = weather.lastIndexOf(File.separator);
-            String dir = weather.substring(0, ind + 1);
-
-            record = csvReader.readNext();
-            setWindData(dir + record[1], dir + record[2]);
-            setWeatherData(dir + record[3], dir + record[4]);
-
-            csvReader.close();
-        }
-        catch (CsvValidationException | IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-
     private void setHourlyWeather(LocalDateTime date, CSVWriter writer, String windPath, String tempPath, String humPath)
             throws IOException {
 
@@ -578,7 +562,7 @@ public class ForestArea {
         humData.delete();
     }
 
-    private void setWeatherData(String temperaturePath, String humidityPath) {
+    public void setWeatherData(String temperaturePath, String humidityPath) {
         Dataset temperatureData = gdal.Open(temperaturePath);
         Dataset humidityData = gdal.Open(humidityPath);
 
@@ -611,11 +595,14 @@ public class ForestArea {
             }
         }
 
+        System.out.println(temp[0]);
+        System.out.println(hum[0]);
+
         temperatureData.delete();
         humidityData.delete();
     }
 
-    private void setWindData(String velocityPath, String anglePath) {
+    public void setWindData(String velocityPath, String anglePath) {
         Dataset velocityData = gdal.Open(velocityPath);
 
         var paths = generatePaths(velocityPath, "wind_" + currentDate
@@ -650,8 +637,8 @@ public class ForestArea {
 
         }
 
-      /*  System.out.println("V = " + vel[0]);
-        System.out.println("Ang = " + ang[0]);*/
+        System.out.println("V = " + vel[0]);
+        System.out.println("Ang = " + ang[0]);
         velocityData.delete();
         angleData.delete();
 
@@ -727,9 +714,6 @@ public class ForestArea {
     }
 
     private Dataset changeProjection(Dataset dataset, String path) {
-        //if (elevation.GetSpatialRef().IsProjected() != 1) {
-        // спроецировать в UTM
-
         Vector<String> options = new Vector<>();
         options.add("-t_srs");
         options.add(spatialReferenceUTM.ExportToPrettyWkt());
@@ -738,9 +722,36 @@ public class ForestArea {
         Dataset projected = gdal.Warp(path, srcData, warpOptions);
         dataset = gdal.Open(path);
 
-        //}
         return dataset;
     }
 
 
+    public ForestCell[][] getCells() {
+        return cells;
+    }
+
+    public void findUrbanNeighbours(List<UrbanCell> urbanCells) {
+        for (int i = 0; i < width; i++) {
+            for (int j = 0; j < length; j++) {
+                Geometry areaOfInterest = cells[i][j].calculateAreaOfInterest();
+                for (int k = 0; k < urbanCells.size(); k++) {
+                    var urbanGeom = Geometry.CreateFromWkt(urbanCells.get(k).getGeometry());
+                    if (urbanGeom.Intersect(areaOfInterest))
+                        cells[i][j].addUrbanNeighbour(urbanCells.get(k));
+                }
+            }
+        }
+    }
+
+    public void propagateInUrban(Map<Long, Double> urbanIgnitionProbabilities) {
+        for (int i = 0; i < width; i++) {
+            for (int j = 0; j < length; j++) {
+                if (cells[i][j].getState().equals(ForestStates.DEVELOPING)){
+                    cells[i][j].fireSpreadOnUrban(urbanIgnitionProbabilities);
+
+                }
+            }
+
+        }
+    }
 }

@@ -1,7 +1,8 @@
+package input;
+
 import org.gdal.ogr.Geometry;
 import org.gdal.ogr.ogrConstants;
 
-import java.awt.*;
 import java.time.LocalDateTime;
 
 
@@ -42,8 +43,14 @@ public class InputData {
     String buildingsPath;
     int weatherPeriod;
 
+    public double getHouseMaterial() {
+        return houseMaterial;
+    }
+
+    double houseMaterial;
+
     public InputData(double[] coords, String fuel, String fuelCodes, String elevation, String meteodata, int meteoDataChange,
-                     LocalDateTime start, LocalDateTime finish, int side, String ignition, String buildingsPath) {
+                     LocalDateTime start, LocalDateTime finish, int side, String ignition, String buildingsPath, double houseMaterial) {
         this.meteodata = meteodata;
         this.start     = start;
         this.finish    = finish;
@@ -52,6 +59,7 @@ public class InputData {
         this.elevation = elevation;
         this.weatherPeriod = meteoDataChange;
         this.buildingsPath = buildingsPath;
+        this.houseMaterial = houseMaterial;
 
         startPoint = new Geometry(ogrConstants.wkbPoint);
         endPoint = new Geometry(ogrConstants.wkbPoint);

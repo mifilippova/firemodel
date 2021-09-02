@@ -1,9 +1,51 @@
+package forest;
+
+import org.gdal.ogr.Geometry;
+import org.gdal.ogr.ogr;
+import urban.UrbanCell;
+import urban.UrbanStates;
+
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 public class ForestCell {
-    public ForestCell() {
-        state = ForestStates.UNBURNED;
+    List<UrbanCell> influenceOnUrban;
 
+    public boolean isIgnitedByUrban() {
+        return ignitedByUrban;
+    }
+
+
+    private boolean ignitedByUrban = false;
+
+    public String getGeometry() {
+        return geometry;
+    }
+
+    String geometry;
+
+    public ForestCell(double x, double y) {
+        state            = ForestStates.UNBURNED;
+        influenceOnUrban = new ArrayList<>();
+
+        // Рассчитать geometry
+        Geometry poly = calculateGeometry(x, y);
+        this.geometry = poly.ExportToWkt();
+    }
+
+    private Geometry calculateGeometry(double x, double y) {
+        var ring = new Geometry(ogr.wkbLinearRing);
+        ring.AddPoint(x, y);
+        ring.AddPoint(x + side, y);
+        ring.AddPoint(x + side, y + side);
+        ring.AddPoint(x, y + side);
+        ring.AddPoint(x, y);
+
+        var poly = new Geometry(ogr.wkbPolygon);
+        poly.AddGeometry(ring);
+        return poly;
     }
 
     public ForestStates getState() {
@@ -70,15 +112,6 @@ public class ForestCell {
 
     public void setNeighbours(ForestCell[] neighbours) {
         this.neighbours = neighbours;
-    }
-
-    public ForestCell(double height) {
-        fuel              = 0;
-        state             = ForestStates.UNBURNED;
-        windVelocity      = 0;
-        windDirection     = 0;
-        spreadRateDefault = 0;
-        this.height       = height;
     }
 
     public static int getSide() {
@@ -187,5 +220,53 @@ public class ForestCell {
 
     public void setInnerFireTime(double innerFireTime) {
         this.innerFireTime = innerFireTime;
+    }
+
+    public Geometry calculateAreaOfInterest() {
+        var a = (3 * windVelocity / 5 + 3) * 4.5 + side / 2;
+        var pt = Geometry.CreateFromWkt(geometry).Centroid();
+        return pt.Buffer(a);
+    }
+
+    public void addUrbanNeighbour(UrbanCell urbanCell) {
+        influenceOnUrban.add(urbanCell);
+    }
+
+    public void fireSpreadOnUrban(Map<Long, Double> urbanIgnitionProbabilities) {
+        var k = getMaxSpreadRate() < 13.1 ? 3 : 4.5;
+        var a = (3 * getWindVelocity() / 5 + 3) * k + side * 1.0 / 2;
+        var b = -2 * getWindVelocity() / 15 + 3 + side * 1.0 / 2;
+        var c = -1 * getWindVelocity() / 15 + 3 + side * 1.0 / 2;
+
+        var center = Geometry.CreateFromWkt(getGeometry()).Centroid();
+        var ring = new Geometry(ogr.wkbLinearRing);
+        ring.AddPoint(center.GetX() - c, center.GetY() - b);
+        ring.AddPoint(center.GetX() + a, center.GetY() - b);
+        ring.AddPoint(center.GetX() + a, center.GetY() + b);
+        ring.AddPoint(center.GetX() - c, center.GetY() + b);
+
+        var influenceArea = new Geometry(ogr.wkbPolygon);
+        influenceArea.AddGeometry(ring);
+
+        for (int i = 0; i < influenceOnUrban.size(); i++) {
+            var geometry = Geometry.CreateFromWkt(influenceOnUrban.get(i).getGeometry());
+            if (influenceOnUrban.get(i).getState().equals(UrbanStates.UNBURNED) && influenceArea.Intersect(geometry)) {
+                var pr = influenceOnUrban.get(i).getMaterial() * influenceOnUrban.get(i).getWeather() *
+                         getMaxSpreadRate() < 13.1 ? 0.4 : 1 * influenceArea.Intersection(geometry).Area() / geometry.Area();
+                if (urbanIgnitionProbabilities.containsKey(influenceOnUrban.get(i).getId()))
+                    urbanIgnitionProbabilities.put(influenceOnUrban.get(i).getId(),
+                            urbanIgnitionProbabilities.get(influenceOnUrban.get(i).getId()) + 1 - pr);
+                else
+                    urbanIgnitionProbabilities.put(influenceOnUrban.get(i).getId(), 1 - pr);
+            }
+        }
+    }
+
+    public void becomeIgnited() {
+        ignitedByUrban = true;
+    }
+
+    public void makeIgnitedByUrbanDefault() {
+        ignitedByUrban = false;
     }
 }
