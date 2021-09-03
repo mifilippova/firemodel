@@ -2,6 +2,8 @@ package forest;
 
 import org.gdal.ogr.Geometry;
 import org.gdal.ogr.ogr;
+import org.gdal.osr.CoordinateTransformation;
+import org.gdal.osr.SpatialReference;
 import urban.UrbanCell;
 import urban.UrbanStates;
 
@@ -11,26 +13,33 @@ import java.util.List;
 import java.util.Map;
 
 public class ForestCell {
-    List<UrbanCell> influenceOnUrban;
+    String geometry;
+    private boolean ignitedByUrban = false;
+    ForestStates state;
+    private double innerFireTime;
+    double maxSpreadRate = 0.0;
+    double firePeriod = 0.0;
+    double fuel;
+    double windVelocity;
+    double windDirection;
+    double height;
+    double spreadRateDefault;
+    ForestCell[] neighbours; // N NE E SE S SW W NW
+    double slope;
+    double[] spreadRates;
+    static int side;
+
 
     public boolean isIgnitedByUrban() {
         return ignitedByUrban;
     }
 
-
-    private boolean ignitedByUrban = false;
-
     public String getGeometry() {
         return geometry;
     }
 
-    String geometry;
-
     public ForestCell(double x, double y) {
-        state            = ForestStates.UNBURNED;
-        influenceOnUrban = new ArrayList<>();
-
-        // Рассчитать geometry
+        state = ForestStates.UNBURNED;
         Geometry poly = calculateGeometry(x, y);
         this.geometry = poly.ExportToWkt();
     }
@@ -56,9 +65,6 @@ public class ForestCell {
         this.state = state;
     }
 
-    ForestStates state;
-    private double innerFireTime;
-
     public double getMaxSpreadRate() {
         return maxSpreadRate;
     }
@@ -66,9 +72,6 @@ public class ForestCell {
     public double getFirePeriod() {
         return firePeriod;
     }
-
-    double maxSpreadRate = 0.0;
-    double firePeriod = 0.0;
 
     public void setFuel(double fuel) {
         this.fuel = fuel;
@@ -78,7 +81,6 @@ public class ForestCell {
         return fuel;
     }
 
-    double fuel;
 
     public void setWindVelocity(double windVelocity) {
         this.windVelocity = windVelocity;
@@ -92,23 +94,13 @@ public class ForestCell {
         return windVelocity;
     }
 
-    double windVelocity;
-    double windDirection;
-
     public void setHeight(double height) {
         this.height = height;
     }
 
-    double height;
-    double spreadRateDefault;
-    ForestCell[] neighbours; // N NE E SE S SW W NW
-    double slope;
-
     public double[] getSpreadRates() {
         return spreadRates;
     }
-
-    double[] spreadRates;
 
     public void setNeighbours(ForestCell[] neighbours) {
         this.neighbours = neighbours;
@@ -122,21 +114,12 @@ public class ForestCell {
         ForestCell.side = side;
     }
 
-    static int side;
-
-    public ForestCell(double fuel, double temperature,
-                      double humidity, double windVelocity,
-                      double windDirection, double height) {
-        this.fuel = fuel;
-        changeDefaultSpreadRate(temperature, windVelocity, humidity);
-        this.windVelocity  = windVelocity;
-        this.windDirection = windDirection;
-        this.height        = height;
-        state              = ForestStates.UNBURNED;
-    }
-
     public double getHeight() {
         return height;
+    }
+
+    public double getWindDirection() {
+        return windDirection;
     }
 
     public void initSlope() {
@@ -150,10 +133,6 @@ public class ForestCell {
                 (8 * side); //(neighbours[0].getHeight() - neighbours[4].getHeight()) / (2 * side);
 
         slope = Math.toDegrees(Math.atan(Math.sqrt(x * x + y * y)));
-    }
-
-    public double getWindDirection() {
-        return windDirection;
     }
 
     public void changeDefaultSpreadRate(double temperature,
@@ -170,12 +149,8 @@ public class ForestCell {
         for (int i = 0; i < 8; i++) {
             spreadRates[i] = calculateSpreadRate(i);
         }
-
-
         maxSpreadRate = Arrays.stream(spreadRates).max().getAsDouble();
-
-        if (maxSpreadRate > 0) firePeriod = 0.4 * side / maxSpreadRate;
-
+        if (maxSpreadRate > 0) firePeriod = 0.45 * side / maxSpreadRate;
 
     }
 
@@ -222,44 +197,65 @@ public class ForestCell {
         this.innerFireTime = innerFireTime;
     }
 
-    public Geometry calculateAreaOfInterest() {
-        var a = (3 * windVelocity / 5 + 3) * 4.5 + side / 2;
-        var pt = Geometry.CreateFromWkt(geometry).Centroid();
-        return pt.Buffer(a);
-    }
 
-    public void addUrbanNeighbour(UrbanCell urbanCell) {
-        influenceOnUrban.add(urbanCell);
-    }
-
-    public void fireSpreadOnUrban(Map<Long, Double> urbanIgnitionProbabilities) {
+    public void fireSpreadOnUrban(UrbanCell[][] urbanCells, int i, int j, int width, int length) {
         var k = getMaxSpreadRate() < 13.1 ? 3 : 4.5;
         var a = (3 * getWindVelocity() / 5 + 3) * k + side * 1.0 / 2;
         var b = -2 * getWindVelocity() / 15 + 3 + side * 1.0 / 2;
         var c = -1 * getWindVelocity() / 15 + 3 + side * 1.0 / 2;
 
-        var center = Geometry.CreateFromWkt(getGeometry()).Centroid();
-        var ring = new Geometry(ogr.wkbLinearRing);
-        ring.AddPoint(center.GetX() - c, center.GetY() - b);
-        ring.AddPoint(center.GetX() + a, center.GetY() - b);
-        ring.AddPoint(center.GetX() + a, center.GetY() + b);
-        ring.AddPoint(center.GetX() - c, center.GetY() + b);
+        var t = Math.sqrt(b * (a + c) / 2.0);
+        var geom = Geometry.CreateFromWkt(geometry).Centroid();
+        double x = geom.GetX(), y = geom.GetY();
+        var influence = new Geometry(ogr.wkbLinearRing);
+        double[] f = rotatedCoords(x - t, y + c, x, y, windDirection);
+        influence.AddPoint(f[0], f[1]);
+        f = rotatedCoords(x + t, y + c, x, y, windDirection);
+        influence.AddPoint(f[0], f[1]);
+        f = rotatedCoords(x + t, y - a, x, y, windDirection);
+        influence.AddPoint(f[0], f[1]);
+        f = rotatedCoords(x - t, y - a, x, y, windDirection);
+        influence.AddPoint(f[0], f[1]);
+        f = rotatedCoords(x - t, y + c, x, y, windDirection);
+        influence.AddPoint(f[0], f[1]);
 
-        var influenceArea = new Geometry(ogr.wkbPolygon);
-        influenceArea.AddGeometry(ring);
+        var poly = new Geometry(ogr.wkbPolygon);
+        poly.AddGeometry(influence);
 
-        for (int i = 0; i < influenceOnUrban.size(); i++) {
-            var geometry = Geometry.CreateFromWkt(influenceOnUrban.get(i).getGeometry());
-            if (influenceOnUrban.get(i).getState().equals(UrbanStates.UNBURNED) && influenceArea.Intersect(geometry)) {
-                var pr = influenceOnUrban.get(i).getMaterial() * influenceOnUrban.get(i).getWeather() *
-                         getMaxSpreadRate() < 13.1 ? 0.4 : 1 * influenceArea.Intersection(geometry).Area() / geometry.Area();
-                if (urbanIgnitionProbabilities.containsKey(influenceOnUrban.get(i).getId()))
-                    urbanIgnitionProbabilities.put(influenceOnUrban.get(i).getId(),
-                            urbanIgnitionProbabilities.get(influenceOnUrban.get(i).getId()) + 1 - pr);
-                else
-                    urbanIgnitionProbabilities.put(influenceOnUrban.get(i).getId(), 1 - pr);
+
+        int mini = (int) Math.max(0, i - a / side);
+        int minj = (int)Math.max(0, j - a / side);
+        int maxi = (int) Math.min(width - 1, i + a / side);
+        int maxj = (int) Math.min(length - 1, j + a / side);
+
+        double ign;
+        for (int l = mini; l <= maxi; l++) {
+            for (int m = minj; m <= maxj; m++) {
+                if (urbanCells[l][m] != null
+                    && urbanCells[l][m].getState().equals(UrbanStates.UNBURNED)){
+                    var urbanGeom = Geometry.CreateFromWkt(urbanCells[l][m].getGeometry());
+                    if (urbanGeom.Intersects(poly)){
+                        ign = urbanCells[l][m].getMaterial() * urbanCells[l][m].getWeather()
+                              * urbanGeom.Intersection(poly).Area() / urbanGeom.Area();
+                        if (k == 3)
+                            ign *= 0.4;
+                        urbanCells[l][m].addIgnitionProbability(1 - ign);
+
+                    }
+                }
             }
         }
+
+    }
+
+    private double[] rotatedCoords(double pointX, double pointY,
+                                   double originX, double originY, double angle) {
+        var x = Math.cos(Math.toRadians(angle)) * (pointX - originX)
+                + Math.sin(Math.toRadians(angle)) * (pointY - originY) + originX;
+        var y = -Math.sin(Math.toRadians(angle)) * (pointX - originX)
+                + Math.cos(Math.toRadians(angle)) * (pointY - originY) + originY;
+        return new double[]{x, y};
+
     }
 
     public void becomeIgnited() {

@@ -151,7 +151,6 @@ public class ForestArea {
             // поменять погоду
             if (minutesLeft == 0) {
                 setSpreadRates();
-                printStatistics();
             }
 
             for (int i = 2; i < width - 2; i++) {
@@ -213,7 +212,7 @@ public class ForestArea {
         }
 
 
-    private void printStatistics() {
+    public void printStatistics() {
         int ignited = 0;
         int burned = 0;
         int developing = 0;
@@ -264,77 +263,12 @@ public class ForestArea {
         }
     }
 
-    public void presentResult() {
-        String path = "C:\\Users\\admin\\Documents\\firemodel\\project\\data\\result\\result_" + currentDate
-                .format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm")) + ".tif";
-
-        var driver = gdal.GetDriverByName("GTiff");
-
-        Dataset resultData = driver.Create(path,
-                width, length,
-                1, gdalconst.GDT_Int32);
-
-
-        var sourceSRS = new SpatialReference();
-        sourceSRS.ImportFromEPSG(4326);
-        var ct = new CoordinateTransformation(sourceSRS, spatialReferenceUTM);
-        var beginning = ct.TransformPoint(inputData.getStartPoint().GetX(),
-                inputData.getStartPoint().GetY());
-
-        double[] geotransform = {beginning[0], 30, 0.0, beginning[1], 0, -30};
-        resultData.SetGeoTransform(geotransform);
-        resultData.SetProjection(spatialReferenceUTM.ExportToPrettyWkt());
-
-        Band result = resultData.GetRasterBand(1);
-        for (int i = 0; i < width; i++) {
-            for (int j = 0; j < length; j++) {
-                result.WriteRaster(i, j, 1, 1,
-                        new int[]{cells[i][j].getState().getValue()});
-            }
-        }
-
-        resultData.delete();
-    }
-
-    public void presentFuel() {
-        String path = "C:\\Users\\admin\\Documents\\firemodel\\project\\data\\result\\dem_" + currentDate
-                .format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm")) + ".tif";
-
-        var driver = gdal.GetDriverByName("GTiff");
-
-        Dataset resultData = driver.Create(path,
-                width, length,
-                1, gdalconst.GDT_Float64);
-
-
-        var sourceSRS = new SpatialReference();
-        sourceSRS.ImportFromEPSG(4326);
-        var ct = new CoordinateTransformation(sourceSRS, spatialReferenceUTM);
-        var beginning = ct.TransformPoint(inputData.getStartPoint().GetX(),
-                inputData.getStartPoint().GetY());
-
-        double[] geotransform = {beginning[0], 30, 0.0, beginning[1], 0, -30};
-        resultData.SetGeoTransform(geotransform);
-        resultData.SetProjection(spatialReferenceUTM.ExportToPrettyWkt());
-
-        Band result = resultData.GetRasterBand(1);
-        for (int i = 0; i < width; i++) {
-            for (int j = 0; j < length; j++) {
-                result.WriteRaster(i, j, 1, 1,
-                        new double[]{cells[i][j].getHeight()});
-            }
-        }
-
-        resultData.delete();
-    }
-
-
     public void setFuel(String path, String fuelCodes) {
         Map<String, Double> fuelTypesTransition = Stream.of(new Object[][]{
-                {"Tree", 0.75},
-                {"Shrub", 0.9},
-                {"Herb", 0.6},
-                {"Agriculture", 0.75},
+                {"Tree", 0.6},
+                {"Shrub", 0.7},
+                {"Herb", 0.3},
+                {"Agriculture", 1.2},
                 {"Sparse", 0.1} // Barren, Water, Snow-Ice, NA -> 0
         }).collect(Collectors.toMap(data -> (String) data[0], data -> (Double) data[1]));
 
@@ -360,7 +294,6 @@ public class ForestArea {
                 cells[i][j].setFuel(val);
             }
         }
-
 
         fuel.delete();
         modified.delete();
@@ -390,258 +323,38 @@ public class ForestArea {
         return codes;
     }
 
-    public void initWeather(String weather) {
-        FileReader file = null;
-        try {
-            file = new FileReader(weather);
+    public void setWeatherData(String weatherDataPath) {
+        var dataset = gdal.Open(weatherDataPath);
+        Band velocity = dataset.GetRasterBand(1);
+        Band angle = dataset.GetRasterBand(2);
+        Band temperature = dataset.GetRasterBand(3);
+        Band humidity = dataset.GetRasterBand(4);
 
-            var csvReader = new CSVReader(file);
-            String[] record;
-            var writer = new CSVWriter(new FileWriter("..\\data\\weather\\weather.csv"));
-
-            var date = inputData.getStart();
-            date = LocalDateTime.of(date.getYear(), date.getMonth(), date.getDayOfMonth(), date.getHour(), 0);
-
-            while ((record = csvReader.readNext()) != null) {
-                setHourlyWeather(date, writer, record[1], record[2], record[3]);
-                date = date.plusDays(1);
-                date = LocalDateTime.of(date.getYear(), date.getMonth(), date.getDayOfMonth(), 0, 0);
-            }
-
-            csvReader.close();
-            writer.close();
-            file.close();
-
-        }
-        catch (CsvValidationException | IOException e) {
-            e.printStackTrace();
-        }
-
-    }
-
-    private void setHourlyWeather(LocalDateTime date, CSVWriter writer, String windPath, String tempPath, String humPath)
-            throws IOException {
-
-        var path = "..\\data\\weather\\";
-        String[] content = new String[5];
-
-        Dataset windData = gdal.Open(windPath);
-        Dataset tempData = gdal.Open(tempPath);
-        Dataset humData = gdal.Open(humPath);
-
-
-        var paths = generatePaths(tempPath, "temp_" + date.toLocalDate()
-                .format(DateTimeFormatter.ofPattern("yyyy_MM_dd")) + ".tif");
-
-        tempData = changeProjection(tempData, paths[0]);
-        tempData = changeResolutionAndBorders(tempData, paths[1]);
-
-        paths = generatePaths(tempPath, "hum_" + date.toLocalDate()
-                .format(DateTimeFormatter.ofPattern("yyyy_MM_dd")) + ".tif");
-
-        humData = changeProjection(humData, paths[0]);
-        humData = changeResolutionAndBorders(humData, paths[1]);
-
-        paths = generatePaths(windPath, "wind_" + date.toLocalDate()
-                .format(DateTimeFormatter.ofPattern("yyyy_MM_dd")) + ".tif");
-
-        windData = changeProjection(windData, paths[0]);
-        windData = changeResolutionAndBorders(windData, paths[1]);
-
-        var driver = gdal.GetDriverByName("GTiff");
-
-        for (int i = 1; i <= tempData.GetRasterCount(); i++) {
-
-            content[0] = date.format(DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm"));
-
-            Band horizontal = windData.GetRasterBand(2 * i - 1);
-            Band vertical = windData.GetRasterBand(2 * i);
-
-            Dataset wind = driver.Create(path
-                                         + "wind_"
-                                         + date.format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm"))
-                                         + "_vel.tif",
-                    windData.GetRasterXSize(), windData.GetRasterYSize(),
-                    1, gdalconst.GDT_Float64);
-
-            wind.SetGeoTransform(windData.GetGeoTransform());
-            wind.SetProjection(windData.GetProjection());
-
-            content[1] = "wind_"
-                         + date.format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm"))
-                         + "_vel.tif";
-            Dataset wind_angle = driver.Create(path
-                                               + "wind_" + date.format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm"))
-                                               + "_ang.tif",
-                    windData.GetRasterXSize(), windData.GetRasterYSize(),
-                    1, gdalconst.GDT_Float64);
-
-            wind_angle.SetGeoTransform(windData.GetGeoTransform());
-            wind_angle.SetProjection(windData.GetProjection());
-
-            content[2] = "wind_" + date.format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm"))
-                         + "_ang.tif";
-
-
-            Dataset currentTemp = driver.Create(path
-                                                + "temp_" + date.format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm"))
-                                                + ".tif",
-
-                    windData.GetRasterXSize(), windData.GetRasterYSize(),
-                    1, gdalconst.GDT_Float64);
-
-            currentTemp.SetGeoTransform(windData.GetGeoTransform());
-            currentTemp.SetProjection(windData.GetProjection());
-
-            content[3] = "temp_" + date.format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm"))
-                         + ".tif";
-
-
-            Dataset currentHum = driver.Create(path
-                                               + "hum_" + date.format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm"))
-                                               + ".tif",
-
-                    windData.GetRasterXSize(), windData.GetRasterYSize(),
-                    1, gdalconst.GDT_Float64);
-
-            currentHum.SetGeoTransform(windData.GetGeoTransform());
-            currentHum.SetProjection(windData.GetProjection());
-
-            content[4] = "hum_" + date.format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm"))
-                         + ".tif";
-
-            writer.writeNext(content);
-
-            Band velocity = wind.GetRasterBand(1);
-            Band angle = wind_angle.GetRasterBand(1);
-
-
-            double[] proj_x = new double[1];
-            double[] proj_y = new double[1];
-
-            double[] val_velocity = new double[1];
-            double[] val_angle = new double[1];
-
-            Band temp = tempData.GetRasterBand(i);
-            Band hum = humData.GetRasterBand(i);
-
-            Band currenttemp = currentTemp.GetRasterBand(1);
-            Band currenthum = currentHum.GetRasterBand(1);
-
-            double[] val = new double[1];
-
-            for (int k = 0; k < width; k++) {
-                for (int j = 0; j < length; j++) {
-
-                    horizontal.ReadRaster(k, j, 1, 1, proj_x);
-                    vertical.ReadRaster(k, j, 1, 1, proj_y);
-
-                    val_velocity[0] = Math.sqrt(proj_x[0] * proj_x[0] + proj_y[0] * proj_y[0]) * 36 / 10;
-                    val_angle[0]    = (int) Math.round(180 - Math.toDegrees(Math.atan(proj_y[0] / proj_x[0]))
-                                                       + (proj_x[0] / Math.abs(proj_x[0]))); // куда
-                    val_angle[0]    = (180 + val_angle[0]) % 360;
-
-                    velocity.WriteRaster(k, j, 1, 1, val_velocity);
-                    angle.WriteRaster(k, j, 1, 1, val_angle);
-
-                    temp.ReadRaster(k, j, 1, 1, val);
-                    val[0] -= 273.15;
-                    currenttemp.WriteRaster(k, j, 1, 1, val);
-
-                    hum.ReadRaster(k, j, 1, 1, val);
-                    currenthum.WriteRaster(k, j, 1, 1, val);
-
-                }
-
-            }
-
-            date = date.plusMinutes(60);
-        }
-        tempData.delete();
-        windData.delete();
-        humData.delete();
-    }
-
-    public void setWeatherData(String temperaturePath, String humidityPath) {
-        Dataset temperatureData = gdal.Open(temperaturePath);
-        Dataset humidityData = gdal.Open(humidityPath);
-
-        var paths = generatePaths(temperaturePath, "temp_" + currentDate
-                .format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm")) + ".tif");
-
-        temperatureData = changeProjection(temperatureData, paths[0]);
-        temperatureData = changeResolutionAndBorders(temperatureData, paths[1]);
-
-        paths = generatePaths(temperaturePath, "hum_" + currentDate
-                .format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm")) + ".tif");
-
-        humidityData = changeProjection(humidityData, paths[0]);
-        humidityData = changeResolutionAndBorders(humidityData, paths[1]);
-
-        Band temperature = temperatureData.GetRasterBand(1);
-        Band humidity = humidityData.GetRasterBand(1);
-
-        double[] temp = new double[1];
-        double[] hum = new double[1];
+        var temp = new double[1];
+        var hum = new double[1];
+        var vel = new double[1];
+        var ang = new double[1];
 
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < length; j++) {
                 temperature.ReadRaster(i, j, 1, 1, temp);
                 humidity.ReadRaster(i, j, 1, 1, hum);
+                velocity.ReadRaster(i, j, 1,1,vel);
+                angle.ReadRaster(i, j, 1,1,ang);
 
                 cells[i][j].changeDefaultSpreadRate(temp[0],
-                        cells[i][j].getWindVelocity(), hum[0]);
-
-            }
-        }
-
-        System.out.println(temp[0]);
-        System.out.println(hum[0]);
-
-        temperatureData.delete();
-        humidityData.delete();
-    }
-
-    public void setWindData(String velocityPath, String anglePath) {
-        Dataset velocityData = gdal.Open(velocityPath);
-
-        var paths = generatePaths(velocityPath, "wind_" + currentDate
-                .format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm")) + "_vel.tif");
-
-        velocityData = changeProjection(velocityData, paths[0]);
-        velocityData = changeResolutionAndBorders(velocityData, paths[1]);
-
-        Dataset angleData = gdal.Open(anglePath);
-        paths = generatePaths(velocityPath, "wind_" + currentDate
-                .format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm")) + "_ang.tif");
-
-        angleData = changeProjection(angleData, paths[0]);
-        angleData = changeResolutionAndBorders(angleData, paths[1]);
-
-        Band velocity = velocityData.GetRasterBand(1);
-        Band angle = angleData.GetRasterBand(1);
-
-        double[] vel = new double[1];
-        double[] ang = new double[1];
-
-
-        for (int i = 0; i < width; i++) {
-            for (int j = 0; j < length; j++) {
-
-                angle.ReadRaster(i, j, 1, 1, ang);
-                velocity.ReadRaster(i, j, 1, 1, vel);
-
+                        vel[0], hum[0]);
+                cells[i][j].setWindDirection(ang[0]);
                 cells[i][j].setWindVelocity(vel[0]);
-                cells[i][j].setWindDirection(ang[0]); //(ang[0] + 10)%360);
-            }
 
+            }
         }
 
-        System.out.println("V = " + vel[0]);
-        System.out.println("Ang = " + ang[0]);
-        velocityData.delete();
-        angleData.delete();
-
+        temperature.delete();
+        humidity.delete();
+        velocity.delete();
+        angle.delete();
+        dataset.delete();
     }
 
     private String[] generatePaths(String path, String name) {
@@ -730,24 +443,11 @@ public class ForestArea {
         return cells;
     }
 
-    public void findUrbanNeighbours(List<UrbanCell> urbanCells) {
-        for (int i = 0; i < width; i++) {
-            for (int j = 0; j < length; j++) {
-                Geometry areaOfInterest = cells[i][j].calculateAreaOfInterest();
-                for (int k = 0; k < urbanCells.size(); k++) {
-                    var urbanGeom = Geometry.CreateFromWkt(urbanCells.get(k).getGeometry());
-                    if (urbanGeom.Intersect(areaOfInterest))
-                        cells[i][j].addUrbanNeighbour(urbanCells.get(k));
-                }
-            }
-        }
-    }
-
-    public void propagateInUrban(Map<Long, Double> urbanIgnitionProbabilities) {
+    public void propagateInUrban(UrbanCell[][] urbanCells) {
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < length; j++) {
                 if (cells[i][j].getState().equals(ForestStates.DEVELOPING)){
-                    cells[i][j].fireSpreadOnUrban(urbanIgnitionProbabilities);
+                    cells[i][j].fireSpreadOnUrban(urbanCells, i, j, width, length);
 
                 }
             }

@@ -8,30 +8,42 @@ import org.gdal.ogr.ogr;
 import java.util.*;
 
 public class UrbanCell {
-    double material;
+    static double material = 1.0;
+    double weather;
+    String geometry;
+    double windVelocity;
+    double windAngle;
+    UrbanStates state;
+    double side;
 
     public double getWeather() {
         return weather;
     }
 
-    double weather;
-
     public String getGeometry() {
         return geometry;
     }
 
-    String geometry;
+    public UrbanCell(double x, double y, double side) {
+        this.state = UrbanStates.UNBURNED;
+        this.side  = side;
+        Geometry poly = calculateGeometry(x, y);
+        this.geometry = poly.ExportToWkt();
 
-    List<ForestCell> influenceOnForest;
-    List<UrbanCell> influenceOnUrban;
+    }
 
+    private Geometry calculateGeometry(double x, double y) {
+        var ring = new Geometry(ogr.wkbLinearRing);
+        ring.AddPoint(x, y);
+        ring.AddPoint(x + side, y);
+        ring.AddPoint(x + side, y + side);
+        ring.AddPoint(x, y + side);
+        ring.AddPoint(x, y);
 
-    public UrbanCell(long id, String geometry) {
-        this.id           = id;
-        this.geometry     = geometry;
-        this.state        = UrbanStates.UNBURNED;
-        influenceOnForest = new ArrayList<>();
-        influenceOnUrban  = new ArrayList<>();
+        var poly = new Geometry(ogr.wkbPolygon);
+        poly.AddGeometry(ring);
+
+        return poly;
     }
 
     public double getWindVelocity() {
@@ -42,11 +54,16 @@ public class UrbanCell {
         return side;
     }
 
-    double windVelocity;
-    double windAngle;
-    UrbanStates state;
-    double side;
-    long id;
+
+    public double getIgnitionProbability() {
+        return ignitionProbability;
+    }
+
+    public void setIgnitionProbability(double ignitionProbability) {
+        this.ignitionProbability = ignitionProbability;
+    }
+
+    double ignitionProbability = 1.0;
 
 
     public double getWindAngle() {
@@ -58,11 +75,6 @@ public class UrbanCell {
     }
 
     double[] coords;
-
-    public long getId() {
-        return id;
-    }
-
 
     public void setState(UrbanStates state) {
         this.state = state;
@@ -82,24 +94,6 @@ public class UrbanCell {
 
     double innerTime = 0;
 
-    public UrbanCell(double material, double weather, double windVelocity,
-                     double windAngle, UrbanStates state, Geometry geometry, long id) {
-        this.material     = material;
-        this.weather      = weather;
-        this.windVelocity = windVelocity;
-        this.windAngle    = windAngle;
-        this.state        = state;
-        this.id           = id;
-    }
-
-
-    public UrbanCell(UrbanStates state, double area, double[] coords, double houseMaterial) {
-        this.state    = state;
-        this.side     = Math.sqrt(area);
-        this.coords   = coords;
-        this.material = houseMaterial;
-    }
-
     public void setMaterial(double material) {
         this.material = material;
     }
@@ -116,9 +110,6 @@ public class UrbanCell {
         this.windAngle = windAngle;
     }
 
-    public void addInfluenceOnForest(ForestCell forestCell) {
-        influenceOnForest.add(forestCell);
-    }
 
     public Geometry calculateAreaOfInterest() {
         var a = 3 * windVelocity / 5 + 3 + side / 2;
@@ -126,27 +117,9 @@ public class UrbanCell {
         return pt.Buffer(a);
     }
 
-    public void addUrbanNeighbour(UrbanCell urbanCell) {
-        influenceOnUrban.add(urbanCell);
-    }
+    public void fireSpreadOnUrban(double step,
+                                  UrbanStates[][] states, Random rand, int i, int j) {
 
-    public void fireSpreadOnUrban(double step, Map<Long, Double> urbanIgnitionProbabilities,
-                                  Map<Long, UrbanStates> states, Random rand) {
-        Geometry influenceArea = getInfluenceArea();
-
-        for (int i = 0; i < influenceOnUrban.size(); i++) {
-            var geometry = Geometry.CreateFromWkt(influenceOnUrban.get(i).getGeometry());
-            if (influenceOnUrban.get(i).getState().equals(UrbanStates.UNBURNED) && influenceArea.Intersect(geometry)) {
-                var pr = influenceOnUrban.get(i).getMaterial() * influenceOnUrban.get(i).getWeather()
-                         * influenceArea.Intersection(geometry).Area() / geometry.Area();
-
-                if (urbanIgnitionProbabilities.containsKey(influenceOnUrban.get(i).getId()))
-                    urbanIgnitionProbabilities.put(influenceOnUrban.get(i).getId(),
-                            urbanIgnitionProbabilities.get(influenceOnUrban.get(i).getId()) + 1 - pr);
-                else
-                    urbanIgnitionProbabilities.put(influenceOnUrban.get(i).getId(), 1 - pr);
-            }
-        }
         if (innerTime == 0) {
             if (state.equals(UrbanStates.SLOWDEVELOPING))
                 innerTime = (rand.nextDouble() * 3 + 5) * 60;
@@ -161,44 +134,26 @@ public class UrbanCell {
         } else {
             innerTime -= step;
             if (innerTime <= 0) {
-                innerTime = 0;
-                states.put(id, UrbanStates.values()[state.getValue() + 1]);
+                innerTime    = 0;
+                states[i][j] = UrbanStates.values()[state.getValue() + 1];
             }
         }
 
     }
 
-    private Geometry getInfluenceArea() {
-        double a = 3 * getWindVelocity() / 5 + 3 + side / 2;
-        double b = -2 * getWindVelocity() / 15 + 3 + side / 2;
-        double c = -1 * getWindVelocity() / 15 + 3 + side / 2;
-
-        var center = Geometry.CreateFromWkt(getGeometry()).Centroid();
-        var ring = new Geometry(ogr.wkbLinearRing);
-        ring.AddPoint(center.GetX() - c, center.GetY() - b);
-        ring.AddPoint(center.GetX() + a, center.GetY() - b);
-        ring.AddPoint(center.GetX() + a, center.GetY() + b);
-        ring.AddPoint(center.GetX() - c, center.GetY() + b);
-
-        var influenceArea = new Geometry(ogr.wkbPolygon);
-        influenceArea.AddGeometry(ring);
-        return influenceArea;
-    }
-
-    public void developIgnition(double step, Map<Long, UrbanStates> states, Random rand) {
-
+    public void developIgnition(double step, UrbanStates[][] states, Random rand, int i, int j) {
         if (innerTime == 0) {
             innerTime = (rand.nextDouble() * 2 + 4) * 60;
         } else {
             innerTime -= step;
             if (innerTime <= 0) {
-                innerTime = 0;
-                states.put(id, UrbanStates.SLOWDEVELOPING);
+                innerTime    = 0;
+                states[i][j] = UrbanStates.SLOWDEVELOPING;
             }
         }
     }
 
-    public void developFlashover(double step, Map<Long, UrbanStates> states, Random rand) {
+    public void developFlashover(double step, UrbanStates[][] states, Random rand, int i, int j) {
         if (innerTime == 0) {
             if (material == 1.0) {
                 innerTime = (rand.nextDouble() * 10 + 20) * 60;
@@ -209,22 +164,65 @@ public class UrbanCell {
         } else {
             innerTime -= step;
             if (innerTime <= 0) {
-                innerTime = 0;
-                states.put(id, UrbanStates.EXTINGUISHED);
+                innerTime    = 0;
+                states[i][j] = UrbanStates.EXTINGUISHED;
             }
         }
     }
 
-    public void fireSpreadOnForest() {
-        var influenceArea = getInfluenceArea();
-        for (int i = 0; i < influenceOnForest.size(); i++) {
-            if (!influenceOnForest.get(i).getState().equals(ForestStates.UNBURNED))
-                continue;
+    public void fireSpreadOnForest(ForestCell[][] cells, int i, int j, int width, int length) {
+        double a = 3 * getWindVelocity() / 5 + 3 + side / 2;
+        double b = -2 * getWindVelocity() / 15 + 3 + side / 2;
+        double c = -1 * getWindVelocity() / 15 + 3 + side / 2;
 
-            var forestCell = Geometry.CreateFromWkt(influenceOnForest.get(i).getGeometry());
-            if (influenceArea.Intersect(forestCell)){
-                influenceOnForest.get(i).becomeIgnited();
+
+        var t = Math.sqrt(b * (a + c) / 2.0);
+        var geom = Geometry.CreateFromWkt(geometry).Centroid();
+        double x = geom.GetX(), y = geom.GetY();
+        var influence = new Geometry(ogr.wkbLinearRing);
+        double[] f = rotatedCoords(x - t, y + c, x, y, windAngle);
+        influence.AddPoint(f[0], f[1]);
+        f = rotatedCoords(x + t, y + c, x, y, windAngle);
+        influence.AddPoint(f[0], f[1]);
+        f = rotatedCoords(x + t, y - a, x, y, windAngle);
+        influence.AddPoint(f[0], f[1]);
+        f = rotatedCoords(x - t, y - a, x, y, windAngle);
+        influence.AddPoint(f[0], f[1]);
+        f = rotatedCoords(x - t, y + c, x, y, windAngle);
+        influence.AddPoint(f[0], f[1]);
+
+        var influenceArea = new Geometry(ogr.wkbPolygon);
+        influenceArea.AddGeometry(influence);
+
+
+        int mini = (int) Math.max(0, i - a / side);
+        int minj = (int) Math.max(0, j - a / side);
+        int maxi = (int) Math.min(width, i + a / side);
+        int maxj = (int) Math.min(length, j + a / side);
+
+        for (int l = mini; l < maxi; l++) {
+            for (int m = minj; m < maxj; m++) {
+                if (cells[l][m].getState() != ForestStates.UNBURNED)
+                    continue;
+                var forestGeom = Geometry.CreateFromWkt(cells[l][m].getGeometry());
+                if (influenceArea.Intersect(forestGeom))
+                    cells[l][m].becomeIgnited();
             }
         }
+
+    }
+
+    private double[] rotatedCoords(double pointX, double pointY,
+                                   double originX, double originY, double angle) {
+        var x = Math.cos(Math.toRadians(angle)) * (pointX - originX)
+                + Math.sin(Math.toRadians(angle)) * (pointY - originY) + originX;
+        var y = -Math.sin(Math.toRadians(angle)) * (pointX - originX)
+                + Math.cos(Math.toRadians(angle)) * (pointY - originY) + originY;
+        return new double[]{x, y};
+
+    }
+
+    public void addIgnitionProbability(double v) {
+        ignitionProbability *= v;
     }
 }

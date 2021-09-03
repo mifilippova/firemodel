@@ -17,7 +17,7 @@ public class Main {
 
 
         var start = LocalDateTime.of(2019, 10,28, 1, 34);
-        var finish = LocalDateTime.of(2019, 10, 28, 11, 34);
+        var finish = LocalDateTime.of(2019, 10, 28, 11, 34); // 11
 
 
         int weatherPeriod = 60; // minutes
