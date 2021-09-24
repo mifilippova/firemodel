@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Vector;
 
@@ -57,6 +58,7 @@ public class GlobalFire {
         defineAreaSize();
 
         currentDate = inputData.getStart();
+        startDate   = inputData.getStart();
         forest      = new ForestArea(inputData, spatialReferenceUTM, length, width);
         urban       = new UrbanArea(inputData, spatialReferenceUTM, length, width);
         setWeather(inputData.getMeteodata(), 0);
@@ -192,8 +194,10 @@ public class GlobalFire {
 
     }
 
+    LocalDateTime startDate;
+
     public void propagate() {
-        int step = 90;
+        int step = 180;
         double minutesLeft = 0;
         System.out.println(currentDate);
 
@@ -210,15 +214,17 @@ public class GlobalFire {
             urban.updateStates();
 
             currentDate = currentDate.plusSeconds(step);
-            minutesLeft += (step / 60);
-            if (minutesLeft == inputData.getWeatherPeriod()) {
+            minutesLeft = startDate.until(currentDate, ChronoUnit.MINUTES);
+            if (startDate.until(currentDate, ChronoUnit.MINUTES)
+                >= inputData.getWeatherPeriod()) {
                 setWeather(inputData.getMeteodata(),
                         (int) Duration.between(inputData.getStart(), currentDate).toHours());
 
                 forest.printStatistics();
                 urban.printUrbanStatistics();
                 presentResult();
-                minutesLeft = 0;
+                minutesLeft = startDate.until(currentDate, ChronoUnit.MINUTES) - inputData.getWeatherPeriod();
+                startDate = currentDate;
             }
         }
         presentResult();
@@ -230,7 +236,7 @@ public class GlobalFire {
     }
 
     private void presentForestResults() {
-        String path = "..\\data\\result\\result_" + currentDate
+        String path = "C:\\Users\\admin\\Documents\\firemodel\\project\\data\\result\\result_" + currentDate
                 .format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm")) + ".tif";
 
         Dataset resultData = gdal.GetDriverByName("GTiff").Create(path,
@@ -255,10 +261,11 @@ public class GlobalFire {
             for (int j = 0; j < length; j++) {
                 result.WriteRaster(i, j, 1, 1,
                         new byte[]{(byte) forest.getCells()[i][j].getState().getValue()});
-                if (urban.getUrbanCells()[i][j] != null)
+                if (urban.getUrbanCells()[i][j] != null) {
                     value = (byte) urban.getUrbanCells()[i][j].getState().getValue();
                     if (value > 0)
                         result.WriteRaster(i, j, 1, 1, new byte[]{value});
+                }
 
             }
         }

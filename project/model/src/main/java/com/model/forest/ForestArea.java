@@ -15,6 +15,7 @@ import org.gdal.osr.SpatialReference;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -28,7 +29,8 @@ public class ForestArea {
     int length, width;
     ForestCell[][] cells;
     InputData inputData;
-    String ignitionRasterPath = "../data/ignition/ignition.tif";
+    String ignitionRasterPath = "C:\\Users\\admin\\Documents\\firemodel\\project\\data\\ignition\\ignition.tif";
+    //"../data/ignition/ignition.tif";
 
     public void setLength(int length) {
         this.length = length;
@@ -49,6 +51,7 @@ public class ForestArea {
     private SpatialReference spatialReferenceUTM;
 
     public ForestArea(InputData inputData, SpatialReference spatialReferenceUTM, int length, int width) {
+
         this.side      = inputData.getSide();
         this.inputData = inputData;
         currentDate    = inputData.getStart();
@@ -114,6 +117,7 @@ public class ForestArea {
         double[] start = transform.TransformPoint(inputData.getStartPoint().GetX(),
                 inputData.getStartPoint().GetY());
 
+        System.out.println(ign.GetLayer(0).GetFeatureCount());
         for (int i = 0; i < ign.GetLayerCount(); i++) {
             for (int j = 0; j < ign.GetLayer(i).GetFeatureCount(); j++) {
 
@@ -210,7 +214,7 @@ public class ForestArea {
                         if (Arrays.stream(cells[i][j].neighbours)
                                 .anyMatch(x -> x.getState().equals(ForestStates.DEVELOPING))) {
 
-                            newState = (cells[i - 1][j - 1].getSpreadRates()[3] +
+                            newState = cells[i][j].getCombustion() + (cells[i - 1][j - 1].getSpreadRates()[3] +
                                         cells[i + 1][j - 1].getSpreadRates()[5] +
                                         cells[i - 1][j + 1].getSpreadRates()[1] +
                                         cells[i + 1][j + 1].getSpreadRates()[7]) * cells[i][j].getFirePeriod() /
@@ -220,7 +224,8 @@ public class ForestArea {
                                         cells[i + 1][j].getSpreadRates()[6] +
                                         cells[i][j + 1].getSpreadRates()[0]) * cells[i][j].getFirePeriod() / side;
 
-                            if (newState >= 1)
+                            cells[i][j].setCombustion(cells[i][j].getCombustion() + newState);
+                            if (cells[i][j].getCombustion() >= 1)
                                 states[i][j] = ForestStates.IGNITED;
                         }
 
@@ -314,9 +319,9 @@ public class ForestArea {
     public void setFuel(String path, String fuelCodes) {
         Map<String, Double> fuelTypesTransition = Stream.of(new Object[][]{
                 {"Tree", 0.6},
-                {"Shrub", 0.7},
+                {"Shrub", 0.6},
                 {"Herb", 0.3},
-                {"Agriculture", 1.2},
+                {"Agriculture", 1.3},
                 {"Sparse", 0.1} // Barren, Water, Snow-Ice, NA -> 0
         }).collect(Collectors.toMap(data -> (String) data[0], data -> (Double) data[1]));
 

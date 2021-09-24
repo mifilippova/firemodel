@@ -23,6 +23,16 @@ public class ForestCell {
     double slope;
     double[] spreadRates;
     static int side;
+    double combustion = 0;
+
+
+    public double getCombustion() {
+        return combustion;
+    }
+
+    public void setCombustion(double combustion) {
+        this.combustion = combustion;
+    }
 
 
     public boolean isIgnitedByUrban() {
@@ -145,7 +155,7 @@ public class ForestCell {
             spreadRates[i] = calculateSpreadRate(i);
         }
         maxSpreadRate = Arrays.stream(spreadRates).max().getAsDouble();
-        if (maxSpreadRate > 0) firePeriod = 0.45 * side / maxSpreadRate;
+        if (maxSpreadRate > 0) firePeriod = 0.125 * side / maxSpreadRate;
 
     }
 
@@ -219,7 +229,7 @@ public class ForestCell {
 
 
         int mini = (int) Math.max(0, i - a / side);
-        int minj = (int)Math.max(0, j - a / side);
+        int minj = (int) Math.max(0, j - a / side);
         int maxi = (int) Math.min(width - 1, i + a / side);
         int maxj = (int) Math.min(length - 1, j + a / side);
 
@@ -227,9 +237,9 @@ public class ForestCell {
         for (int l = mini; l <= maxi; l++) {
             for (int m = minj; m <= maxj; m++) {
                 if (urbanCells[l][m] != null
-                    && urbanCells[l][m].getState().equals(UrbanStates.UNBURNED)){
+                    && urbanCells[l][m].getState().equals(UrbanStates.UNBURNED)) {
                     var urbanGeom = Geometry.CreateFromWkt(urbanCells[l][m].getGeometry());
-                    if (urbanGeom.Intersects(poly)){
+                    if (urbanGeom.Intersects(poly)) {
                         ign = urbanCells[l][m].getMaterial() * urbanCells[l][m].getWeather()
                               * urbanGeom.Intersection(poly).Area() / urbanGeom.Area();
                         if (k == 3)

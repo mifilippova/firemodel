@@ -20,8 +20,9 @@ public class UrbanArea {
     int side;
     InputData inputData;
     SpatialReference spatialReferenceUTM;
-    String areaVectorPath = "..\\data\\buildings\\urban_area.shp";
-    String areaRasterPath = "..\\data\\buildings\\buildings.tif";
+    String areaVectorPath = "../data/buildings/urban_area.shp";
+    String areaRasterPath = "C:\\Users\\admin\\Documents\\firemodel\\project\\data\\buildings\\buildings.tif";
+    //"../data/buildings/buildings.tif";
     UrbanCell[][] urbanCells;
     UrbanStates[][] states;
     Random random = new Random();
@@ -44,8 +45,9 @@ public class UrbanArea {
         this.side                = inputData.getSide();
         UrbanCell.material       = inputData.getHouseMaterial();
 
-        if (inputData.getIgnition().endsWith("osm"))
+        if (inputData.getBuildingsPath().endsWith("osm"))
             extractBuildings(inputData, spatialReferenceUTM);
+        else areaVectorPath = inputData.getBuildingsPath();
         rasterizeBuildingMap();
         initUrbanCells();
 
@@ -93,8 +95,13 @@ public class UrbanArea {
         SpatialReference sourceSrs = urbanLayer.GetSpatialRef();
         double[] extent = urbanLayer.GetExtent();
 
-        double x_res = ((extent[1] - extent[0]) / side);
-        double y_res = ((extent[3] - extent[2]) / side);
+        var transform = new CoordinateTransformation(sourceSrs, spatialReferenceUTM);
+
+        double[] start = transform.TransformPoint(extent[1], extent[3]);
+        double[] end = transform.TransformPoint(extent[0], extent[2]);
+
+        double x_res = ((start[0] - end[0]) / side);
+        double y_res = ((start[1] - end[1]) / side);
 
         int xCor = (int) x_res;
         int yCor = (int) y_res;
