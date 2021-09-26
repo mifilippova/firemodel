@@ -236,7 +236,7 @@ public class GlobalFire {
     }
 
     private void presentForestResults() {
-        String path = "C:\\Users\\admin\\Documents\\firemodel\\project\\data\\result\\result_" + currentDate
+        String path = "../data/result/result_" + currentDate
                 .format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm")) + ".tif";
 
         Dataset resultData = gdal.GetDriverByName("GTiff").Create(path,

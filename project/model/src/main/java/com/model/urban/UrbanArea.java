@@ -21,7 +21,7 @@ public class UrbanArea {
     InputData inputData;
     SpatialReference spatialReferenceUTM;
     String areaVectorPath = "../data/buildings/urban_area.shp";
-    String areaRasterPath = "C:\\Users\\admin\\Documents\\firemodel\\project\\data\\buildings\\buildings.tif";
+    String areaRasterPath = "../data/buildings/buildings.tif";
     //"../data/buildings/buildings.tif";
     UrbanCell[][] urbanCells;
     UrbanStates[][] states;

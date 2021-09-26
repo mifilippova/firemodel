@@ -29,8 +29,7 @@ public class ForestArea {
     int length, width;
     ForestCell[][] cells;
     InputData inputData;
-    String ignitionRasterPath = "C:\\Users\\admin\\Documents\\firemodel\\project\\data\\ignition\\ignition.tif";
-    //"../data/ignition/ignition.tif";
+    String ignitionRasterPath = "../data/ignition/ignition.tif";
 
     public void setLength(int length) {
         this.length = length;
