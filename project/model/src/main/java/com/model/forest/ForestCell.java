@@ -49,6 +49,7 @@ public class ForestCell {
         this.geometry = poly.ExportToWkt();
     }
 
+    // Определить географически - геометрическую форму ячейки.
     private Geometry calculateGeometry(double x, double y) {
         var ring = new Geometry(ogr.wkbLinearRing);
         ring.AddPoint(x, y);
@@ -127,19 +128,22 @@ public class ForestCell {
         return windDirection;
     }
 
+    // Рассчитать значение уклона территории.
     public void initSlope() {
         var x = Math.ceil((neighbours[1].getHeight() - neighbours[7].getHeight())
                           + 2 * (neighbours[2].getHeight() - neighbours[6].getHeight())
                           + (neighbours[3].getHeight() - neighbours[5].getHeight())) /
-                (8 * side); //(neighbours[2].getHeight() - neighbours[6].getHeight()) / (2 * side);
+                (8 * side);
         var y = Math.ceil((neighbours[7].getHeight() - neighbours[5].getHeight())
                           + 2 * (neighbours[0].getHeight() - neighbours[4].getHeight())
                           + (neighbours[1].getHeight() - neighbours[3].getHeight())) /
-                (8 * side); //(neighbours[0].getHeight() - neighbours[4].getHeight()) / (2 * side);
+                (8 * side);
 
         slope = Math.toDegrees(Math.atan(Math.sqrt(x * x + y * y)));
     }
 
+    // Измененение значения скорости распростарнения пожара по
+    // умолчанию (при изменении погоды)
     public void changeDefaultSpreadRate(double temperature,
                                         double windVelocity,
                                         double humidity) {
@@ -148,6 +152,8 @@ public class ForestCell {
 
     }
 
+    // Инициализация скоростей распространения пожара
+    // от соседних ячеек.
     public void initSpreadRates() {
         if (spreadRates == null)
             spreadRates = new double[8];
@@ -160,6 +166,7 @@ public class ForestCell {
     }
 
 
+    // Расчет скорости распространения пожара от соседней ячейки.
     private double calculateSpreadRate(int i) {
         // N NE E SE S SW W NW
         double wind = switch (i) {
@@ -175,7 +182,7 @@ public class ForestCell {
         };
 
         int sign = 1;
-        //if (getHeight() > neighbours[i].getHeight()) sign = -1;
+
         double sl = Math.exp(sign * 3.533 * Math.pow(Math.tan(Math.toRadians(slope)
                                                               * Math.abs(Math.cos(Math.toRadians(windDirection)))), 1.2));
 
@@ -184,6 +191,7 @@ public class ForestCell {
 
     }
 
+    // Расчет внутренней скорости распространения пожара.
     public double calculateInternalSpreadRate() {
 
         int sign = 1;
@@ -203,6 +211,7 @@ public class ForestCell {
     }
 
 
+    // Распростарнения пожара на городские ячейки.
     public void fireSpreadOnUrban(UrbanCell[][] urbanCells, int i, int j, int width, int length) {
         var k = getMaxSpreadRate() < 13.1 ? 3 : 4.5;
         var a = (3 * getWindVelocity() / 5 + 3) * k + side * 1.0 / 2;

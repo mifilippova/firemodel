@@ -65,6 +65,13 @@ public class GlobalFire {
 
     }
 
+
+    /**
+     * Задает значения погодных условий для ячеек.
+     * @param weather Путь к файлу с перечислением названий файлов
+     *                данных для каждого временного этапа.
+     * @param number
+     */
     private void setWeather(String weather, int number) {
         FileReader file = null;
         try {
@@ -92,6 +99,13 @@ public class GlobalFire {
         }
     }
 
+
+    /**
+     * Слияния метеорологических данных.
+     * @param dir Путь к директории данных.
+     * @param record Название файлов данных.
+     * @return
+     */
     private String mergeWeatherData(String dir, String[] record) {
         String output = dir + "weather" + currentDate
                 .format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm")) + ".tif";
@@ -128,6 +142,14 @@ public class GlobalFire {
         return output;
     }
 
+    /**
+     * Добавление слоя погодного параметра к общему файлу.
+     *
+     * @param name Название файла.
+     * @param dataset Общий датасет.
+     * @param projectedName Имя спроецированного файла.
+     * @param bandNumber Номер слоя.
+     */
     private void addBandToWeatherDataset(String name, Dataset dataset, String projectedName, int bandNumber) {
         Dataset originalDataset = gdal.Open(name);
 
@@ -149,6 +171,7 @@ public class GlobalFire {
         originalDataset.delete();
     }
 
+    // Изменение разрешения и границ файла данных.
     private Dataset changeResolutionAndBorders(Dataset dataset, String path) {
         // Изменить размер и разрешение
         var sourceSRS = new SpatialReference();
@@ -174,6 +197,7 @@ public class GlobalFire {
         return modified;
     }
 
+    // Изменить проекцию данных.
     private Dataset changeProjection(Dataset dataset, String path) {
         Vector<String> options = new Vector<>();
         options.add("-t_srs");
@@ -196,6 +220,7 @@ public class GlobalFire {
 
     LocalDateTime startDate;
 
+    // Распространение пожара на глобальном уровне.
     public void propagate() {
         int step = 180;
         double minutesLeft = 0;
@@ -235,6 +260,7 @@ public class GlobalFire {
         presentForestResults();
     }
 
+    // Представление результатов
     private void presentForestResults() {
         String path = "../data/result/result_" + currentDate
                 .format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm")) + ".tif";

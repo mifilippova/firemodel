@@ -31,23 +31,10 @@ public class ForestArea {
     InputData inputData;
     String ignitionRasterPath = "../data/ignition/ignition.tif";
 
-    public void setLength(int length) {
-        this.length = length;
-    }
-
-    public void setWidth(int width) {
-        this.width = width;
-    }
-
-    public void setSpatialReferenceUTM(SpatialReference spatialReferenceUTM) {
-        this.spatialReferenceUTM = spatialReferenceUTM;
-    }
-
     LocalDateTime currentDate;
 
     ForestStates[][] states;
-
-    private SpatialReference spatialReferenceUTM;
+    private final SpatialReference spatialReferenceUTM;
 
     public ForestArea(InputData inputData, SpatialReference spatialReferenceUTM, int length, int width) {
 
@@ -79,6 +66,7 @@ public class ForestArea {
     }
 
 
+    // Опеределить координаты каждой ячейки.
     private void defineArea(InputData inputData) {
         cells = new ForestCell[width][length];
 
@@ -106,6 +94,7 @@ public class ForestArea {
         }
     }
 
+    // Инициализировать начальную площадь возгорания.
     private void setIgnition(String ignition) {
         DataSource ign = ogr.Open(ignition);
 
@@ -156,6 +145,8 @@ public class ForestArea {
         }
     }
 
+    // В случае с полигоном в качестве территории начального возгорания,
+    // растеризация векторного файла.
     private void rasterizeIgnition(String ignition) {
         var ignitionData = ogr.Open(ignition);
         var ignitionLayer = ignitionData.GetLayer(0);
@@ -187,6 +178,7 @@ public class ForestArea {
         band.delete();
     }
 
+    // Определение окрестности Мура.
     private void defineNeighbours() {
         for (int i = 1; i < width - 1; i++) {
             for (int j = 1; j < length - 1; j++) {
@@ -197,6 +189,7 @@ public class ForestArea {
         }
     }
 
+    // Распростарнение по лесной территории.
     public void propagate(double minutesLeft, double step, LocalDateTime localDateTime) {
         double newState = 0;
         currentDate = localDateTime;
@@ -315,6 +308,7 @@ public class ForestArea {
         }
     }
 
+    // Инициализация типов топлива в ячейках.
     public void setFuel(String path, String fuelCodes) {
         Map<String, Double> fuelTypesTransition = Stream.of(new Object[][]{
                 {"Tree", 0.6},
@@ -375,6 +369,7 @@ public class ForestArea {
         return codes;
     }
 
+    // Определение погодных условий в каждой ячейке.
     public void setWeatherData(String weatherDataPath) {
         var dataset = gdal.Open(weatherDataPath);
         Band velocity = dataset.GetRasterBand(1);
@@ -417,6 +412,7 @@ public class ForestArea {
 
     }
 
+    // Определение высот ячеен.
     public void setElevation(String path) {
         Dataset elevation = gdal.Open(path);
 
@@ -496,6 +492,7 @@ public class ForestArea {
         return cells;
     }
 
+    // Распространение по территории города.
     public void propagateInUrban(UrbanCell[][] urbanCells) {
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < length; j++) {

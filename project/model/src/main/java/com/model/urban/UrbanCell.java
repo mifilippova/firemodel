@@ -116,6 +116,7 @@ public class UrbanCell {
         return pt.Buffer(a);
     }
 
+    // Распростарнение пожара на городские клетки.
     public void fireSpreadOnUrban(double step,
                                   UrbanStates[][] states, Random rand, int i, int j) {
 
@@ -140,6 +141,7 @@ public class UrbanCell {
 
     }
 
+    // Развитие пожара в подожженой клетке.
     public void developIgnition(double step, UrbanStates[][] states, Random rand, int i, int j) {
         if (innerTime == 0) {
             innerTime = (rand.nextDouble() * 2 + 4) * 60;
@@ -171,6 +173,7 @@ public class UrbanCell {
 
     static double material = 1.0;
 
+    // Распространения пожара на лесной территории.
     public void fireSpreadOnForest(ForestCell[][] cells, int i, int j, int width, int length) {
         double a = 3 * getWindVelocity() / 5 + 3 + side / 2;
         double b = -2 * getWindVelocity() / 15 + 3 + side / 2;

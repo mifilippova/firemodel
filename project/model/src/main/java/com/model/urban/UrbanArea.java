@@ -22,7 +22,7 @@ public class UrbanArea {
     SpatialReference spatialReferenceUTM;
     String areaVectorPath = "../data/buildings/urban_area.shp";
     String areaRasterPath = "../data/buildings/buildings.tif";
-    //"../data/buildings/buildings.tif";
+
     UrbanCell[][] urbanCells;
     UrbanStates[][] states;
     Random random = new Random();
@@ -30,10 +30,6 @@ public class UrbanArea {
     public UrbanCell[][] getUrbanCells() {
         return urbanCells;
     }
-
-  /*  public List<UrbanCell> getUrbanCells() {
-        return urbanCells;
-    }*/
 
     public UrbanArea(InputData inputData, SpatialReference spatialReferenceUTM, int length, int width) {
         this.width               = width;
@@ -88,6 +84,7 @@ public class UrbanArea {
         dataset.delete();
     }
 
+    // Растеризация векторного файла данных о зданиях.
     private void rasterizeBuildingMap() {
         var urbanData = ogr.Open(areaVectorPath);
         var urbanLayer = urbanData.GetLayer(0);
@@ -124,10 +121,7 @@ public class UrbanArea {
         band.delete();
     }
 
-   /* public void initIgnition(String path) {
-
-    }*/
-
+    // Распростарнение пожара на территории города.
     public void propagate(double step) {
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < length; j++) {
@@ -162,7 +156,7 @@ public class UrbanArea {
 
 
                         int mini = (int) Math.max(0, i - a / side);
-                        int minj = (int)Math.max(0, j - a / side);
+                        int minj = (int) Math.max(0, j - a / side);
                         int maxi = (int) Math.min(width, i + a / side);
                         int maxj = (int) Math.min(length, j + a / side);
 
@@ -171,9 +165,9 @@ public class UrbanArea {
                         for (int l = mini; l < maxi; l++) {
                             for (int m = minj; m < maxj; m++) {
                                 if (urbanCells[l][m] != null
-                                    && urbanCells[l][m].getState().equals(UrbanStates.UNBURNED)){
+                                    && urbanCells[l][m].getState().equals(UrbanStates.UNBURNED)) {
                                     var urbanGeom = Geometry.CreateFromWkt(urbanCells[l][m].getGeometry());
-                                    if (urbanGeom.Intersection(influenceArea) != null){
+                                    if (urbanGeom.Intersection(influenceArea) != null) {
                                         ign = urbanCells[l][m].getMaterial() * urbanCells[l][m].getWeather()
                                               * urbanGeom.Intersection(influenceArea).Area() / urbanGeom.Area();
 
@@ -197,6 +191,7 @@ public class UrbanArea {
         }
     }
 
+    // Поворот координат территории влияния клетки.
     private double[] rotatedCoords(double pointX, double pointY,
                                    double originX, double originY, double angle) {
         var x = Math.cos(Math.toRadians(angle)) * (pointX - originX)
@@ -208,7 +203,7 @@ public class UrbanArea {
     }
 
 
-
+    // Выделить здания в отедльный файл из OSM файла.
     private void extractBuildings(InputData inputData, SpatialReference spatialReferenceUTM) {
         gdal.AllRegister();
         var sourceSRS = new SpatialReference();
@@ -302,6 +297,7 @@ public class UrbanArea {
     }
 
 
+    // Распространение пожара на лесную территорию.
     public void propagateInForest(ForestCell[][] cells) {
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < length; j++) {
@@ -346,7 +342,7 @@ public class UrbanArea {
             for (int j = 0; j < length; j++) {
                 if (states[i][j] == null)
                     continue;
-                switch(states[i][j]){
+                switch (states[i][j]) {
                     case UNBURNED -> {
                         unburned++;
                     }
@@ -378,6 +374,7 @@ public class UrbanArea {
         System.out.println("EXTINGUISHED = " + exting);
     }
 
+    // Установить значения погодных условий для ячеек.
     public void setWeatherData(String weatherDataPath) {
         var dataset = gdal.Open(weatherDataPath);
         Band velocity = dataset.GetRasterBand(1);
